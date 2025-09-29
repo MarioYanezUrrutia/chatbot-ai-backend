@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pratsy - Asistente Virtual del Motel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .avatar-container {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .avatar.speaking {
+            animation: pulse 1s infinite;
+            transform: scale(1.1);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        .status-indicator {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 12px;
+            height: 12px;
+            background: #4ade80;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.bot .message-bubble {
+            background: #f1f3f5;
+            color: #333;
+            border: 1px solid #e9ecef;
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .message.bot .message-time {
+            text-align: left;
+        }
+
+        .quick-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .quick-button {
+            background: #4facfe;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .quick-button:hover {
+            background: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .chat-input-container {
+            background: white;
+            padding: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #4facfe;
+        }
+
+        .voice-button {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .voice-button:hover {
+            transform: scale(1.05);
+        }
+
+        .voice-button.recording {
+            background: linear-gradient(135deg, #ff4757, #c44569);
+            animation: pulse 1s infinite;
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #666;
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #666;
+            border-radius: 50%;
+            animation: typingAnimation 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .voice-status {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .voice-status.show {
+            opacity: 1;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .control-button {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-button:hover {
+            background: #e9ecef;
+        }
+
+        .control-button.active {
+            background: #4facfe;
+            color: white;
+            border-color: #4facfe;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 95%;
+                height: 95vh;
+            }
+            
+            .chat-header {
+                padding: 15px;
+            }
+            
+            .avatar-container {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .message-bubble {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 Pratsy</h1>
+            <p>Tu asistente virtual del motel - Habla conmigo por voz o texto</p>
+            <div class="avatar-container">
+                <div class="avatar" id="avatar">
+                    🤖
+                    <div class="status-indicator"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="controls">
+                <button class="control-button active" id="ttsToggle">🔊 Voz activada</button>
+                <button class="control-button" id="clearChat">🗑️ Limpiar chat</button>
+            </div>
+            
+            <div class="message bot">
+                <div class="message-bubble">
+                    ¡Hola! Soy Pratsy, tu asistente virtual del motel. Puedes escribirme o usar el botón de micrófono para hablar conmigo. ¿En qué puedo ayudarte hoy?
+                    <div class="message-time" id="initialTime"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <button class="voice-button" id="voiceButton" title="Mantén presionado para hablar">
+                    🎤
+                    <div class="voice-status" id="voiceStatus">Mantén presionado para hablar</div>
+                </button>
+                <input type="text" class="chat-input" id="chatInput" placeholder="Escribe tu mensaje aquí..." maxlength="500">
+                <button class="send-button" id="sendButton" title="Enviar mensaje">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PratsyChat {
+            constructor() {
+                this.sessionId = this.generateSessionId();
+                this.isRecording = false;
+                this.recognition = null;
+                this.synth = window.speechSynthesis;
+                this.ttsEnabled = true;
+                this.apiUrl = 'http://localhost:8000/api/web-chat/'; // URL completa
+                
+                this.initElements();
+                this.initSpeechRecognition();
+                this.initEventListeners();
+                this.updateInitialTime();
+            }
+
+            generateSessionId() {
+                return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            initElements() {
+                this.chatMessages = document.getElementById('chatMessages');
+                this.chatInput = document.getElementById('chatInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.voiceButton = document.getElementById('voiceButton');
+                this.voiceStatus = document.getElementById('voiceStatus');
+                this.avatar = document.getElementById('avatar');
+                this.ttsToggle = document.getElementById('ttsToggle');
+                this.clearChat = document.getElementById('clearChat');
+            }
+
+            initSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = false;
+                    this.recognition.lang = 'es-ES';
+
+                    this.recognition.onstart = () => {
+                        this.voiceButton.classList.add('recording');
+                        this.showVoiceStatus('Escuchando...');
+                    };
+
+                    this.recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript;
+                        this.chatInput.value = transcript;
+                        this.sendMessage();
+                    };
+
+                    this.recognition.onerror = (event) => {
+                        console.error('Error de reconocimiento:', event.error);
+                        this.showVoiceStatus('Error de reconocimiento');
+                        this.stopRecording();
+                    };
+
+                    this.recognition.onend = () => {
+                        this.stopRecording();
+                    };
+                } else {
+                    console.warn('Reconocimiento de voz no soportado');
+                    this.voiceButton.style.display = 'none';
+                }
+            }
+
+            initEventListeners() {
+                // Enviar mensaje
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                // Reconocimiento de voz
+                this.voiceButton.addEventListener('mousedown', () => this.startRecording());
+                this.voiceButton.addEventListener('mouseup', () => this.stopRecording());
+                this.voiceButton.addEventListener('mouseleave', () => this.stopRecording());
+
+                // Controles
+                this.ttsToggle.addEventListener('click', () => this.toggleTTS());
+                this.clearChat.addEventListener('click', () => this.clearChat());
+
+                // Avatar click para interrumpir TTS
+                this.avatar.addEventListener('click', () => this.stopSpeech());
+            }
+
+            updateInitialTime() {
+                const now = new Date();
+                document.getElementById('initialTime').textContent = 
+                    now.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'});
+            }
+
+            showVoiceStatus(message) {
+                this.voiceStatus.textContent = message;
+                this.voiceStatus.classList.add('show');
+                setTimeout(() => {
+                    this.voiceStatus.classList.remove('show');
+                }, 2000);
+            }
+
+            startRecording() {
+                if (this.recognition && !this.isRecording) {
+                    this.isRecording = true;
+                    this.recognition.start();
+                }
+            }
+
+            stopRecording() {
+                if (this.recognition && this.isRecording) {
+                    this.isRecording = false;
+                    this.voiceButton.classList.remove('recording');
+                    this.recognition.stop();
+                }
+            }
+
+            async sendMessage() {
+                const mensaje = this.chatInput.value.trim();
+                if (!mensaje) return;
+
+                // Limpiar input
+                this.chatInput.value = '';
+                this.sendButton.disabled = true;
+
+                // Agregar mensaje del usuario
+                this.addMessage(mensaje, 'user');
+
+                // Mostrar indicador de escritura
+                this.showTypingIndicator();
+
+                try {
+                    const response = await fetch(this.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            mensaje: mensaje,
+                            session_id: this.sessionId
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.hideTypingIndicator();
+                        
+                        // Agregar respuesta del bot
+                        this.addMessage(data.data.respuesta, 'bot', data.data.botones);
+                        
+                        // Hablar respuesta si TTS está habilitado
+                        if (this.ttsEnabled && data.data.avatar_habla) {
+                            this.speak(data.data.respuesta);
+                        }
+                    } else {
+                        this.hideTypingIndicator();
+                        this.showError('Error: ' + (data.error || 'Respuesta inesperada'));
+                    }
+                } catch (error) {
+                    console.error('Error enviando mensaje:', error);
+                    this.hideTypingIndicator();
+                    this.showError('Error de conexión. Inténtalo de nuevo.');
+                } finally {
+                    this.sendButton.disabled = false;
+                }
+            }
+
+            addMessage(text, sender, buttons = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.className = 'message-bubble';
+                
+                // Formatear texto (convertir saltos de línea a <br>)
+                const formattedText = text.replace(/\n/g, '<br>');
+                bubbleDiv.innerHTML = formattedText;
+
+                // Agregar timestamp
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                const now = new Date();
+                timeDiv.textContent = now.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'});
+                bubbleDiv.appendChild(timeDiv);
+
+                // Agregar botones si existen
+                if (buttons && buttons.length > 0) {
+                    const buttonsDiv = document.createElement('div');
+                    buttonsDiv.className = 'quick-buttons';
+                    
+                    buttons.forEach(button => {
+                        const btn = document.createElement('button');
+                        btn.className = 'quick-button';
+                        btn.textContent = button.texto;
+                        btn.onclick = () => {
+                            this.chatInput.value = button.pregunta_completa || button.texto;
+                            this.sendMessage();
+                        };
+                        buttonsDiv.appendChild(btn);
+                    });
+                    
+                    bubbleDiv.appendChild(buttonsDiv);
+                }
+
+                messageDiv.appendChild(bubbleDiv);
+                this.chatMessages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message bot';
+                typingDiv.id = 'typingIndicator';
+                
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.className = 'message-bubble';
+                
+                const indicatorDiv = document.createElement('div');
+                indicatorDiv.className = 'typing-indicator';
+                indicatorDiv.innerHTML = `
+                    Pratsy está escribiendo
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+                
+                bubbleDiv.appendChild(indicatorDiv);
+                typingDiv.appendChild(bubbleDiv);
+                this.chatMessages.appendChild(typingDiv);
+                this.scrollToBottom();
+            }
+
+            hideTypingIndicator() {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+
+            speak(text) {
+                // Detener cualquier speech anterior
+                this.synth.cancel();
+                
+                // Limpiar texto para TTS (remover emojis y caracteres especiales)
+                const cleanText = text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{27BF}]/gu, '')
+                                    .replace(/[^\w\sáéíóúüñ.,!?]/gi, ' ')
+                                    .trim();
+                
+                if (cleanText) {
+                    const utterance = new SpeechSynthesisUtterance(cleanText);
+                    utterance.lang = 'es-ES';
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.1;
+                    
+                    utterance.onstart = () => {
+                        this.avatar.classList.add('speaking');
+                    };
+                    
+                    utterance.onend = () => {
+                        this.avatar.classList.remove('speaking');
+                    };
+                    
+                    utterance.onerror = () => {
+                        this.avatar.classList.remove('speaking');
+                    };
+                    
+                    this.synth.speak(utterance);
+                }
+            }
+
+            stopSpeech() {
+                this.synth.cancel();
+                this.avatar.classList.remove('speaking');
+            }
+
+            toggleTTS() {
+                this.ttsEnabled = !this.ttsEnabled;
+                this.ttsToggle.textContent = this.ttsEnabled ? '🔊 Voz activada' : '🔇 Voz desactivada';
+                this.ttsToggle.classList.toggle('active', this.ttsEnabled);
+                
+                if (!this.ttsEnabled) {
+                    this.stopSpeech();
+                }
+            }
+
+            clearChat() {
+                // Mantener solo el mensaje inicial y los controles
+                const messages = this.chatMessages.querySelectorAll('.message');
+                messages.forEach((message, index) => {
+                    if (index > 0) { // No eliminar el primer mensaje (bienvenida)
+                        message.remove();
+                    }
+                });
+                
+                // Generar nueva sesión
+                this.sessionId = this.generateSessionId();
+            }
+
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = message;
+                this.chatMessages.appendChild(errorDiv);
+                this.scrollToBottom();
+                
+                setTimeout(() => {
+                    errorDiv.remove();
+                }, 5000);
+            }
+
+            scrollToBottom() {
+                setTimeout(() => {
+                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                }, 100);
+            }
+        }
+
+        // Inicializar el chat cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            new PratsyChat();
+        });
+    </script>
+</body>
+</html>

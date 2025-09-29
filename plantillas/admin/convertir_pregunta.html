@@ -1,0 +1,210 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .form-row {
+            margin-bottom: 20px;
+        }
+        .form-row label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-row input, .form-row textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-row textarea {
+            resize: vertical;
+        }
+        .helptext {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        .submit-row {
+            padding: 20px 0;
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .submit-row input[type="submit"] {
+            background-color: #417690;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        .submit-row input[type="submit"]:hover {
+            background-color: #2e5a73;
+        }
+        .submit-row .cancel-link {
+            color: #666;
+            text-decoration: none;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .submit-row .cancel-link:hover {
+            background-color: #f5f5f5;
+        }
+        .pregunta-original {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .pregunta-original h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        .pregunta-original p {
+            margin: 5px 0;
+            color: #6c757d;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .warning-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<h2 style="color: #666; font-size: 16px; margin-bottom: 20px;">{{ subtitle }}</h2>
+
+<div class="pregunta-original">
+    <h3>📝 Pregunta Original del Cliente:</h3>
+    <p><strong>Texto:</strong> {{ pregunta.texto_pregunta }}</p>
+    <p><strong>Cliente:</strong> 
+        {% if pregunta.cliente %}
+            {{ pregunta.cliente.nombre_cliente|default:"Sin nombre" }} ({{ pregunta.cliente.telefono }})
+        {% else %}
+            Cliente desconocido
+        {% endif %}
+    </p>
+    <p><strong>Recibida:</strong> {{ pregunta.fecha_recibida|date:"d/m/Y H:i" }}</p>
+</div>
+
+<div class="warning-box">
+    <strong>⚠️ Instrucciones importantes:</strong>
+    • El texto del botón debe ser MÁXIMO 20 caracteres<br>
+    • Si marcas como "mensaje de saludo", se deshabilitará cualquier otro saludo existente<br>
+    • Una vez convertida, la pregunta desconocida será eliminada permanentemente
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="form-row">
+        <label for="{{ form.pregunta_larga.id_for_label }}">{{ form.pregunta_larga.label }}:</label>
+        {{ form.pregunta_larga }}
+        {% if form.pregunta_larga.help_text %}
+            <div class="helptext">{{ form.pregunta_larga.help_text }}</div>
+        {% endif %}
+        {% if form.pregunta_larga.errors %}
+            <div class="errors">{{ form.pregunta_larga.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="form-row">
+        <label for="{{ form.pregunta_corta_boton.id_for_label }}">{{ form.pregunta_corta_boton.label }}:</label>
+        {{ form.pregunta_corta_boton }}
+        {% if form.pregunta_corta_boton.help_text %}
+            <div class="helptext">{{ form.pregunta_corta_boton.help_text }}</div>
+        {% endif %}
+        {% if form.pregunta_corta_boton.errors %}
+            <div class="errors">{{ form.pregunta_corta_boton.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="form-row">
+        <label for="{{ form.respuesta.id_for_label }}">{{ form.respuesta.label }}:</label>
+        {{ form.respuesta }}
+        {% if form.respuesta.help_text %}
+            <div class="helptext">{{ form.respuesta.help_text }}</div>
+        {% endif %}
+        {% if form.respuesta.errors %}
+            <div class="errors">{{ form.respuesta.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="form-row">
+        <label for="{{ form.palabras_clave.id_for_label }}">{{ form.palabras_clave.label }}:</label>
+        {{ form.palabras_clave }}
+        {% if form.palabras_clave.help_text %}
+            <div class="helptext">{{ form.palabras_clave.help_text }}</div>
+        {% endif %}
+        {% if form.palabras_clave.errors %}
+            <div class="errors">{{ form.palabras_clave.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="form-row">
+        <label>
+            {{ form.es_saludo_inicial }} {{ form.es_saludo_inicial.label }}
+        </label>
+        {% if form.es_saludo_inicial.help_text %}
+            <div class="helptext">{{ form.es_saludo_inicial.help_text }}</div>
+        {% endif %}
+        {% if form.es_saludo_inicial.errors %}
+            <div class="errors">{{ form.es_saludo_inicial.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="submit-row">
+        <input type="submit" value="✅ Convertir a Pregunta Frecuente" />
+        <a href="../" class="cancel-link">❌ Cancelar</a>
+    </div>
+</form>
+
+<script>
+// Validación en tiempo real del límite de caracteres
+document.addEventListener('DOMContentLoaded', function() {
+    const botonInput = document.getElementById('{{ form.pregunta_corta_boton.id_for_label }}');
+    if (botonInput) {
+        function actualizarContador() {
+            const actual = botonInput.value.length;
+            const maximo = 20;
+            
+            // Buscar o crear el contador
+            let contador = document.getElementById('contador-caracteres');
+            if (!contador) {
+                contador = document.createElement('div');
+                contador.id = 'contador-caracteres';
+                contador.style.fontSize = '12px';
+                contador.style.marginTop = '3px';
+                botonInput.parentNode.appendChild(contador);
+            }
+            
+            contador.textContent = `${actual}/${maximo} caracteres`;
+            contador.style.color = actual > maximo ? '#d63384' : '#6c757d';
+        }
+        
+        botonInput.addEventListener('input', actualizarContador);
+        actualizarContador(); // Ejecutar una vez al cargar
+    }
+});
+</script>
+{% endblock %}

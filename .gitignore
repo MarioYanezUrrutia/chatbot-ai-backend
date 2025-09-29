@@ -1,0 +1,34 @@
+# Archivos de entorno y configuración sensible
+.env
+.env.local
+.env.production
+*.env
+
+# Base de datos local (si usas SQLite en desarrollo)
+db.sqlite3
+*.db
+
+# Archivos de Python generados automáticamente
+__pycache__/
+*.py[cod]
+*.so
+
+# Dependencias de Python (entorno virtual)
+venv/
+.myvenv/
+myvenv/
+
+# Archivos estáticos y de medios generados en producción
+staticfiles/
+
+
+# Logs
+*.log
+
+# Archivos de IDE (opcional, si usas VS Code, PyCharm, etc.)
+.vscode/
+.idea/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
