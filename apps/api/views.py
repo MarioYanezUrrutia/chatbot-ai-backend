@@ -9,7 +9,7 @@ from django.conf import settings
 from django.db.models import Q 
 import requests
 from datetime import datetime, date, time, timedelta
-import google.genai as genai
+import google as genai
 import asyncio
 # Importar modelos de la nueva app 'reservas'
 from apps.reservas.models import Habitacion, FuncionarioHotel, EstadoConversacion
