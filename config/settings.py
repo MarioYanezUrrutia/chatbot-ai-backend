@@ -23,6 +23,7 @@ DEBUG = env('DEBUG')
 
 # Permitimos el acceso desde la URL de ngrok Y desde nuestro entorno de desarrollo local.
 ALLOWED_HOSTS = [
+    'chatbot-ai-backend-s0h0.onrender.com',  # Render producción
     '7ad8272115d1.ngrok-free.app',  # Para los webhooks de WhatsApp
     'localhost',                   # Para acceder al admin desde tu navegador
     '127.0.0.1',                   # Alias de localhost, es bueno tenerlo también
