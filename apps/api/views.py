@@ -2040,7 +2040,6 @@ def debug_configuracion_completa():
         logger.info(f"   ✅ timezone.now(): {fecha_tz}")
     except Exception as e:
         logger.error(f"   ❌ timezone.now(): {e}")
-    
     try:
         fecha_dt = datetime.now()
         logger.info(f"   ✅ datetime.now(): {fecha_dt}")

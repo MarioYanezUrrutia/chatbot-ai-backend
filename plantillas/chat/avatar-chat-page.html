@@ -55,46 +55,142 @@
             right: 20px;
             top: 50%;
             transform: translateY(-50%);
-            width: 60px;
-            height: 60px;
+            width: 80px; /* Ajustado para el nuevo avatar */
+            height: 80px; /* Ajustado para el nuevo avatar */
         }
 
-        .avatar {
+        .avatar-visual {
             width: 100%;
             height: 100%;
             border-radius: 50%;
             background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: white;
+            border: 4px solid rgba(255,255,255,0.3);
+            position: relative;
+            overflow: hidden;
             cursor: pointer;
             transition: all 0.3s ease;
-            border: 3px solid rgba(255, 255, 255, 0.3);
         }
 
-        .avatar.speaking {
-            animation: pulse 1s infinite;
-            transform: scale(1.1);
+        .avatar-face {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -45%); /* Ajustado para compensar el bounce */
+            width: 60px;
+            height: 60px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        .avatar-eyes {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
         }
 
+        .eye {
+            width: 8px;
+            height: 8px;
+            background: #333;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .avatar-mouth {
+            width: 16px;
+            height: 8px;
+            border: 2px solid #333;
+            border-top: none;
+            border-radius: 0 0 16px 16px;
+            transition: all 0.2s ease;
+        }
+
+        /* Animaciones del avatar */
+        .avatar-visual.speaking {
+            animation: avatarBounce 0.6s ease-in-out infinite alternate;
+            box-shadow: 0 0 25px rgba(255,255,255,0.8);
+        }
+
+        .avatar-visual.speaking .eye {
+            animation: eyeBlink 1s ease-in-out infinite;
+        }
+
+        .avatar-visual.speaking .avatar-mouth {
+            animation: mouthMove 0.3s ease-in-out infinite alternate;
+        }
+
+        .avatar-visual.listening {
+            animation: avatarPulse 1s ease-in-out infinite;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+        }
+
+        .avatar-visual.listening .eye {
+            width: 6px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .avatar-visual.thinking {
+            animation: avatarThink 2s ease-in-out infinite;
+        }
+
+        .avatar-visual.thinking .eye {
+            transform: translateX(-2px);
+        }
+
+        @keyframes avatarBounce {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-5%) scale(1.05); }
+        }
+
+        @keyframes avatarPulse {
+            0% { transform: translateY(-50%) scale(1); box-shadow: 0 0 15px rgba(0,242,254,0.5); }
+            100% { transform: translateY(-50%) scale(1.1); box-shadow: 0 0 25px rgba(0,242,254,0.8); }
+        }
+
+        @keyframes avatarThink {
+            0%, 100% { transform: translateY(-50%) rotate(0deg); }
+            25% { transform: translateY(-50%) rotate(-3deg); }
+            75% { transform: translateY(-50%) rotate(3deg); }
+        }
+
+        @keyframes eyeBlink {
+            0%, 90%, 100% { height: 8px; }
+            95% { height: 2px; }
+        }
+
+        @keyframes mouthMove {
+            0% { 
+                width: 16px; 
+                height: 8px; 
+                border-radius: 0 0 16px 16px; 
+            }
+            100% { 
+                width: 20px; 
+                height: 12px; 
+                border-radius: 0 0 20px 20px; 
+            }
+        }
+
+        /* Status indicators */
         .status-indicator {
             position: absolute;
             bottom: 5px;
             right: 5px;
-            width: 12px;
-            height: 12px;
-            background: #4ade80;
+            width: 16px; /* Ajustado para el nuevo avatar */
+            height: 16px; /* Ajustado para el nuevo avatar */
             border-radius: 50%;
             border: 2px solid white;
+            background: #4ade80;
         }
+
+        .status-indicator.listening { background: #f59e0b; }
+        .status-indicator.speaking { background: #ef4444; }
+        .status-indicator.thinking { background: #8b5cf6; }
 
         .chat-messages {
             flex: 1;
@@ -336,6 +432,18 @@
             border-color: #4facfe;
         }
 
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 12px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .chat-container {
@@ -364,9 +472,15 @@
             <h1>🤖 Pratsy</h1>
             <p>Tu asistente virtual del motel - Habla conmigo por voz o texto</p>
             <div class="avatar-container">
-                <div class="avatar" id="avatar">
-                    🤖
-                    <div class="status-indicator"></div>
+                <div class="avatar-visual" id="avatar">
+                    <div class="avatar-face">
+                        <div class="avatar-eyes">
+                            <div class="eye"></div>
+                            <div class="eye"></div>
+                        </div>
+                        <div class="avatar-mouth"></div>
+                    </div>
+                    <div class="status-indicator" id="statusIndicator"></div>
                 </div>
             </div>
         </div>
@@ -375,6 +489,7 @@
             <div class="controls">
                 <button class="control-button active" id="ttsToggle">🔊 Voz activada</button>
                 <button class="control-button" id="clearChat">🗑️ Limpiar chat</button>
+                <button class="control-button" id="debugToggle">🐛 Debug</button>
             </div>
             
             <div class="message bot">
@@ -387,9 +502,9 @@
 
         <div class="chat-input-container">
             <div class="chat-input-wrapper">
-                <button class="voice-button" id="voiceButton" title="Mantén presionado para hablar">
+                <button class="voice-button" id="voiceButton" title="Clic para activar/desactivar micrófono">
                     🎤
-                    <div class="voice-status" id="voiceStatus">Mantén presionado para hablar</div>
+                    <div class="voice-status" id="voiceStatus">Clic para hablar</div>
                 </button>
                 <input type="text" class="chat-input" id="chatInput" placeholder="Escribe tu mensaje aquí..." maxlength="500">
                 <button class="send-button" id="sendButton" title="Enviar mensaje">
@@ -404,10 +519,20 @@
             constructor() {
                 this.sessionId = this.generateSessionId();
                 this.isRecording = false;
+                this.recordingTimeout = null;
                 this.recognition = null;
                 this.synth = window.speechSynthesis;
                 this.ttsEnabled = true;
-                this.apiUrl = '/api/web-chat/'; // Ajusta según tu configuración de URLs
+                this.debugMode = false;
+                
+                // IMPORTANTE: Ajusta esta URL según tu configuración
+                // Opción 1: Si Django corre en puerto 8000
+                this.apiUrl = 'http://localhost:8000/api/web-chat/';
+                
+                // Opción 2: Si el HTML está servido por Django
+                // this.apiUrl = '/api/web-chat/';
+                
+                console.log('🔗 URL del API configurada:', this.apiUrl);
                 
                 this.initElements();
                 this.initSpeechRecognition();
@@ -426,8 +551,11 @@
                 this.voiceButton = document.getElementById('voiceButton');
                 this.voiceStatus = document.getElementById('voiceStatus');
                 this.avatar = document.getElementById('avatar');
+                this.statusIndicator = document.getElementById('statusIndicator'); // Nuevo elemento
+                this.avatarState = 'idle'; // Nuevo estado para el avatar
                 this.ttsToggle = document.getElementById('ttsToggle');
                 this.clearChat = document.getElementById('clearChat');
+                this.debugToggle = document.getElementById('debugToggle');
             }
 
             initSpeechRecognition() {
@@ -439,6 +567,7 @@
                     this.recognition.lang = 'es-ES';
 
                     this.recognition.onstart = () => {
+                        this.setAvatarState('listening'); // Nuevo
                         this.voiceButton.classList.add('recording');
                         this.showVoiceStatus('Escuchando...');
                     };
@@ -452,10 +581,12 @@
                     this.recognition.onerror = (event) => {
                         console.error('Error de reconocimiento:', event.error);
                         this.showVoiceStatus('Error de reconocimiento');
+                        this.setAvatarState('idle'); // Nuevo
                         this.stopRecording();
                     };
 
                     this.recognition.onend = () => {
+                        this.setAvatarState('idle'); // Nuevo
                         this.stopRecording();
                     };
                 } else {
@@ -475,13 +606,12 @@
                 });
 
                 // Reconocimiento de voz
-                this.voiceButton.addEventListener('mousedown', () => this.startRecording());
-                this.voiceButton.addEventListener('mouseup', () => this.stopRecording());
-                this.voiceButton.addEventListener('mouseleave', () => this.stopRecording());
+                this.voiceButton.addEventListener('click', () => this.toggleRecording());
 
                 // Controles
                 this.ttsToggle.addEventListener('click', () => this.toggleTTS());
-                this.clearChat.addEventListener('click', () => this.clearChat());
+                this.clearChat.addEventListener('click', () => this.clearChatMessages());
+                this.debugToggle.addEventListener('click', () => this.toggleDebug());
 
                 // Avatar click para interrumpir TTS
                 this.avatar.addEventListener('click', () => this.stopSpeech());
@@ -501,36 +631,67 @@
                 }, 2000);
             }
 
+            toggleRecording() {
+                if (this.isRecording) {
+                    this.stopRecording();
+                } else {
+                    this.startRecording();
+                }
+            }
+
             startRecording() {
                 if (this.recognition && !this.isRecording) {
                     this.isRecording = true;
                     this.recognition.start();
+                    this.voiceButton.classList.add('recording');
+                    this.showVoiceStatus('Escuchando... (se detendrá en 10s)');
+                    
+                    // Iniciar temporizador de 10 segundos
+                    this.recordingTimeout = setTimeout(() => {
+                        if (this.isRecording) {
+                            this.stopRecording();
+                            this.showVoiceStatus('Grabación detenida automáticamente');
+                        }
+                    }, 10000); // 10 segundos
                 }
             }
 
             stopRecording() {
                 if (this.recognition && this.isRecording) {
                     this.isRecording = false;
+                    this.recordingTimeout = null;
                     this.voiceButton.classList.remove('recording');
                     this.recognition.stop();
+                    clearTimeout(this.recordingTimeout); // Limpiar el temporizador
+                    this.showVoiceStatus('Grabación detenida');
                 }
             }
 
             async sendMessage() {
                 const mensaje = this.chatInput.value.trim();
-                if (!mensaje) return;
+                if (!mensaje) {
+                    console.log('Mensaje vacío, no se envía');
+                    return;
+                }
 
                 // Limpiar input
                 this.chatInput.value = '';
                 this.sendButton.disabled = true;
 
-                // Agregar mensaje del usuario
-                this.addMessage(mensaje, 'user');
+                // Agregar mensaje del usuario (asegurarse de que sea string)
+                this.addMessage(String(mensaje), 'user');
 
                 // Mostrar indicador de escritura
                 this.showTypingIndicator();
+                this.setAvatarState('thinking'); // Nuevo
 
                 try {
+                    this.logDebug('Enviando mensaje al servidor...', {
+                        url: this.apiUrl,
+                        mensaje: mensaje,
+                        session_id: this.sessionId
+                    });
+
                     const response = await fetch(this.apiUrl, {
                         method: 'POST',
                         headers: {
@@ -542,40 +703,79 @@
                         })
                     });
 
+                    this.logDebug('Respuesta HTTP recibida', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        ok: response.ok
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
                     const data = await response.json();
+                    
+                    this.logDebug('JSON parseado', data);
 
                     if (data.success) {
                         this.hideTypingIndicator();
+                        this.setAvatarState('idle'); // Nuevo
                         
-                        // Agregar respuesta del bot
-                        this.addMessage(data.data.respuesta, 'bot', data.data.botones);
-                        
-                        // Hablar respuesta si TTS está habilitado
-                        if (this.ttsEnabled && data.data.avatar_habla) {
-                            this.speak(data.data.respuesta);
+                        // Validar que la respuesta tenga los datos esperados
+                        if (data.data && data.data.respuesta) {
+                            // Agregar respuesta del bot
+                            this.addMessage(data.data.respuesta, 'bot', data.data.botones);
+                            
+                            // Hablar respuesta si TTS está habilitado
+                            if (this.ttsEnabled && data.data.avatar_habla) {
+                                this.speak(data.data.respuesta);
+                            }
+                        } else {
+                            this.showError('El servidor no devolvió una respuesta válida');
+                            this.logDebug('ERROR: Estructura de respuesta incorrecta', data);
                         }
                     } else {
                         this.hideTypingIndicator();
+                        this.setAvatarState('idle'); // Nuevo
                         this.showError('Error: ' + (data.error || 'Respuesta inesperada'));
+                        this.logDebug('ERROR: success = false', data);
                     }
                 } catch (error) {
                     console.error('Error enviando mensaje:', error);
                     this.hideTypingIndicator();
-                    this.showError('Error de conexión. Inténtalo de nuevo.');
+                    this.showError('Error de conexión. Verifica que el servidor esté en ' + this.apiUrl);
+                    
+                    this.logDebug('ERROR de conexión', {
+                        error: error.message,
+                        stack: error.stack,
+                        url: this.apiUrl
+                    });
                 } finally {
                     this.sendButton.disabled = false;
                 }
             }
 
             addMessage(text, sender, buttons = null) {
+                console.log('📝 addMessage llamado con:', {text, sender, buttons});
+                
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message ${sender}`;
 
                 const bubbleDiv = document.createElement('div');
                 bubbleDiv.className = 'message-bubble';
                 
-                // Formatear texto (convertir saltos de línea a <br>)
-                const formattedText = text.replace(/\n/g, '<br>');
+                // Validar y convertir texto de forma segura
+                let safeText = text;
+                if (text === null || text === undefined || text === '') {
+                    safeText = 'Sin respuesta';
+                    console.warn('⚠️ addMessage recibió texto inválido:', text);
+                } else if (typeof text !== 'string') {
+                    safeText = String(text);
+                    console.warn('⚠️ addMessage convirtió texto no-string:', typeof text);
+                }
+                
+                // Formatear texto
+                const formattedText = safeText.replace(/\n/g, '<br>');
                 bubbleDiv.innerHTML = formattedText;
 
                 // Agregar timestamp
@@ -586,14 +786,14 @@
                 bubbleDiv.appendChild(timeDiv);
 
                 // Agregar botones si existen
-                if (buttons && buttons.length > 0) {
+                if (buttons && Array.isArray(buttons) && buttons.length > 0) {
                     const buttonsDiv = document.createElement('div');
                     buttonsDiv.className = 'quick-buttons';
                     
                     buttons.forEach(button => {
                         const btn = document.createElement('button');
                         btn.className = 'quick-button';
-                        btn.textContent = button.texto;
+                        btn.textContent = button.texto || 'Botón';
                         btn.onclick = () => {
                             this.chatInput.value = button.pregunta_completa || button.texto;
                             this.sendMessage();
@@ -657,15 +857,15 @@
                     utterance.pitch = 1.1;
                     
                     utterance.onstart = () => {
-                        this.avatar.classList.add('speaking');
+                        this.setAvatarState('speaking'); // Nuevo
                     };
                     
                     utterance.onend = () => {
-                        this.avatar.classList.remove('speaking');
+                        this.setAvatarState('idle'); // Nuevo
                     };
                     
                     utterance.onerror = () => {
-                        this.avatar.classList.remove('speaking');
+                        this.setAvatarState('idle');
                     };
                     
                     this.synth.speak(utterance);
@@ -674,7 +874,20 @@
 
             stopSpeech() {
                 this.synth.cancel();
-                this.avatar.classList.remove('speaking');
+                this.setAvatarState('idle');
+            }
+            
+            setAvatarState(state) {
+                // Limpiar clases existentes
+                this.avatar.classList.remove('speaking', 'listening', 'thinking');
+                this.statusIndicator.classList.remove('speaking', 'listening', 'thinking');
+                
+                // Aplicar nuevo estado
+                if (state !== 'idle') {
+                    this.avatar.classList.add(state);
+                    this.statusIndicator.classList.add(state);
+                }
+                this.avatarState = state; // Actualizar el estado interno
             }
 
             toggleTTS() {
@@ -687,9 +900,33 @@
                 }
             }
 
-            clearChat() {
+            toggleDebug() {
+                this.debugMode = !this.debugMode;
+                this.debugToggle.classList.toggle('active', this.debugMode);
+                this.debugToggle.textContent = this.debugMode ? '🐛 Debug ON' : '🐛 Debug';
+                
+                if (!this.debugMode) {
+                    // Eliminar todos los elementos de debug
+                    const debugElements = this.chatMessages.querySelectorAll('.debug-info');
+                    debugElements.forEach(el => el.remove());
+                }
+            }
+
+            logDebug(title, data) {
+                console.log(`[DEBUG] ${title}:`, data);
+                
+                if (this.debugMode) {
+                    const debugDiv = document.createElement('div');
+                    debugDiv.className = 'debug-info';
+                    debugDiv.innerHTML = `<strong>${title}:</strong><br>${JSON.stringify(data, null, 2)}`;
+                    this.chatMessages.appendChild(debugDiv);
+                    this.scrollToBottom();
+                }
+            }
+
+            clearChatMessages() {
                 // Mantener solo el mensaje inicial y los controles
-                const messages = this.chatMessages.querySelectorAll('.message');
+                const messages = this.chatMessages.querySelectorAll('.message, .debug-info');
                 messages.forEach((message, index) => {
                     if (index > 0) { // No eliminar el primer mensaje (bienvenida)
                         message.remove();
@@ -698,6 +935,7 @@
                 
                 // Generar nueva sesión
                 this.sessionId = this.generateSessionId();
+                this.logDebug('Nueva sesión creada', { session_id: this.sessionId });
             }
 
             showError(message) {
