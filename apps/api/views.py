@@ -9,7 +9,7 @@ from django.conf import settings
 from django.db.models import Q 
 import requests
 from datetime import datetime, date, time, timedelta
-import google as genai
+from google import genai
 import asyncio
 # Importar modelos de la nueva app 'reservas'
 from apps.reservas.models import Habitacion, FuncionarioHotel, EstadoConversacion
@@ -1374,31 +1374,111 @@ def obtener_respuesta_del_agente(mensaje_usuario: str, cliente: Cliente, convers
     # --- 5. BÚSQUEDA EN PREGUNTAS FRECUENTES ---
     logger.info("🔍 Buscando en Preguntas Frecuentes...")
     try:
-        palabras_busqueda = mensaje_limpio.split()
-        q_preguntas = Q()
+        # Limpiar y preparar palabras de búsqueda
+        palabras_busqueda = [p for p in mensaje_limpio.split() if len(p) >= 3]
         
-        # Buscar por palabras clave
-        for palabra in palabras_busqueda:
-            if len(palabra) >= 3:
-                q_preguntas |= (
-                    Q(palabras_clave__icontains=palabra) | 
-                    Q(pregunta_larga__icontains=palabra) |
-                    Q(pregunta_corta_boton__icontains=palabra) |
-                    Q(respuesta__icontains=palabra)
+        if not palabras_busqueda:
+            logger.info("No hay palabras válidas para búsqueda (mínimo 3 caracteres)")
+        else:
+            # Obtener todas las preguntas activas (excluyendo saludos)
+            preguntas_activas = PreguntaFrecuente.objects.filter(
+                activo=True
+            ).exclude(es_saludo_inicial=True)
+            
+            logger.info(f"Total preguntas activas: {preguntas_activas.count()}")
+            logger.info(f"Palabras a buscar: {palabras_busqueda}")
+            
+            # ============================================
+            # NIVEL 1: BÚSQUEDA EXACTA EN PALABRAS_CLAVE
+            # ============================================
+            logger.info("--- NIVEL 1: Buscando en palabras_clave ---")
+            
+            for pregunta in preguntas_activas:
+                if not pregunta.palabras_clave:
+                    continue
+                
+                # Normalizar palabras clave (separadas por coma)
+                palabras_clave_lista = [
+                    pk.strip().lower() 
+                    for pk in pregunta.palabras_clave.split(',')
+                    if pk.strip()
+                ]
+                
+                # Verificar si alguna palabra del usuario coincide con palabras_clave
+                for palabra_usuario in palabras_busqueda:
+                    for palabra_clave in palabras_clave_lista:
+                        # Coincidencia: palabra exacta o contenida
+                        if (palabra_usuario == palabra_clave or 
+                            palabra_usuario in palabra_clave or 
+                            palabra_clave in palabra_usuario):
+                            
+                            logger.info(f"✅ MATCH EXACTO en palabras_clave:")
+                            logger.info(f"   Usuario: '{palabra_usuario}' -> Clave: '{palabra_clave}'")
+                            logger.info(f"   Pregunta: {pregunta.pregunta_corta_boton}")
+                            
+                            # Procesar respuesta con IA
+                            respuesta_bd = pregunta.respuesta
+                            respuesta_final = procesar_respuesta_con_ia(
+                                respuesta_bd, mensaje_usuario, conversacion
+                            )
+                            return crear_respuesta_texto_segura(respuesta_final)
+            
+            logger.info("No se encontró coincidencia exacta en palabras_clave")
+            
+            # ============================================
+            # NIVEL 2: BÚSQUEDA CON PUNTAJE EN PREGUNTA_LARGA
+            # ============================================
+            logger.info("--- NIVEL 2: Buscando en pregunta_larga con puntaje ---")
+            
+            mejor_pregunta = None
+            mejor_puntaje = 0
+            umbral_minimo = 2  # Mínimo puntaje para considerar válido
+            
+            for pregunta in preguntas_activas:
+                if not pregunta.pregunta_larga:
+                    continue
+                
+                puntaje = 0
+                pregunta_larga_lower = pregunta.pregunta_larga.lower()
+                palabras_pregunta = pregunta_larga_lower.split()
+                
+                # Calcular puntaje por cada palabra del usuario
+                for palabra_usuario in palabras_busqueda:
+                    if palabra_usuario in pregunta_larga_lower:
+                        # Verificar posición de la palabra
+                        posicion = pregunta_larga_lower.find(palabra_usuario)
+                        
+                        # Bonificación por posición temprana (primeras 30 caracteres)
+                        if posicion < 30:
+                            puntaje += 3
+                            logger.info(f"   '{palabra_usuario}' en '{pregunta.pregunta_corta_boton}' (inicio, +3)")
+                        else:
+                            puntaje += 2
+                            logger.info(f"   '{palabra_usuario}' en '{pregunta.pregunta_corta_boton}' (+2)")
+                        
+                        # Bonificación extra si es palabra completa (no parte de otra)
+                        if palabra_usuario in palabras_pregunta:
+                            puntaje += 1
+                            logger.info(f"   '{palabra_usuario}' es palabra completa (+1)")
+                
+                # Actualizar mejor candidato
+                if puntaje > mejor_puntaje:
+                    mejor_puntaje = puntaje
+                    mejor_pregunta = pregunta
+                    logger.info(f"   >>> Nueva mejor opción: '{pregunta.pregunta_corta_boton}' (puntaje: {puntaje})")
+            
+            # Validar si el mejor puntaje supera el umbral
+            if mejor_pregunta and mejor_puntaje >= umbral_minimo:
+                logger.info(f"✅ MATCH POR PUNTAJE (puntaje: {mejor_puntaje})")
+                logger.info(f"   Pregunta seleccionada: {mejor_pregunta.pregunta_corta_boton}")
+                
+                respuesta_bd = mejor_pregunta.respuesta
+                respuesta_final = procesar_respuesta_con_ia(
+                    respuesta_bd, mensaje_usuario, conversacion
                 )
-        
-        pregunta_frecuente = PreguntaFrecuente.objects.filter(
-            q_preguntas, 
-            activo=True
-        ).exclude(
-            es_saludo_inicial=True  # Excluir saludos de esta búsqueda
-        ).first()
-
-        if pregunta_frecuente:
-            logger.info(f"✅ Pregunta frecuente encontrada: {pregunta_frecuente.pregunta_corta_boton}")
-            respuesta_bd = pregunta_frecuente.respuesta
-            respuesta_final = procesar_respuesta_con_ia(respuesta_bd, mensaje_usuario, conversacion)
-            return crear_respuesta_texto_segura(respuesta_final)
+                return crear_respuesta_texto_segura(respuesta_final)
+            else:
+                logger.info(f"❌ No se alcanzó umbral mínimo (mejor puntaje: {mejor_puntaje}, requerido: {umbral_minimo})")
 
     except Exception as e:
         logger.error(f"❌ Error buscando en preguntas frecuentes: {e}")
